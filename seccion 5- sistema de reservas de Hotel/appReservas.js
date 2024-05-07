@@ -2,6 +2,9 @@
 const bookings = []
 flag = true
 const url = 'data.json'
+const counterId = generarGeneradorId()
+
+
 
 async function menu (){ 
   while(flag){
@@ -11,12 +14,13 @@ async function menu (){
   switch (inputUserMenu) {
     case '1':
       const booking = await loadShowData()
-      const inputUserName = prompt(`Ingrese a nombre de quien es la reserva`)
-      const inputUserDateStar = prompt(`Ingrese la fecha de entrada`)
-      const inputUserDateEnd = prompt(`Ingrese la fecha de salida`)
-      const inputUserQuantity = prompt(`Ingrese la cantidad de personas`)
+      const inputUserName = prompt(`Ingrese a nombrey apellido de quien es la reserva`).toLocaleLowerCase()
+      const inputUserDateStar = prompt(`Ingrese la fecha de entrada en el siguiente formato DD/MM/AÑO`)
+      const inputUserDateEnd = prompt(`Ingrese la fecha de salida en el siguiente formato DD/MM/AÑO`)
+      const inputUserQuantity = parseInt(prompt(`Ingrese la cantidad de personas`))
       let { rooms, roomTypes } = booking
-      crearReserva({rooms,roomTypes},inputUserName,inputUserDateEnd,inputUserQuantity)
+      
+      crearReserva({rooms,roomTypes},inputUserName,inputUserDateEnd,inputUserDateStar,inputUserQuantity)
       break;
       case '2':
         flag = false
@@ -29,24 +33,51 @@ async function menu (){
 }
 
  function generarGeneradorId() {
-            let id = 0;
-            function increase() {
-              id++
-              console.log(id)
-            }
-            return increase()
-          }
+    let id = 1;
+    return function () {
+      return id++
+    }
+  }
 
-  function crearReserva({rooms,roomTypes}, inputUserName, inputUserDateEnd, inputUserQuantity) {
-        const roomsAvailables = availableRooms(inputUserQuantity, rooms, roomTypes)
-        console.log('estas son mis habitaciones disponibles')
-        roomsAvailables.forEach(room =>
-          console.log(`habitacion: ${room.number}`)
-        )
-        const inputUserRoom = prompt('Ingrese el numero de la habitacion a reservar')
-        selectedRoom = roomsAvailables.find(room => room.number === inputUserRoom)
+  function crearReserva({rooms,roomTypes}, inputUserName, inputUserDateEnd, inputUserDateStar, inputUserQuantity) {
+    const roomsAvailables = availableRooms(inputUserQuantity, rooms, roomTypes)
+    
+    if(roomsAvailables.length > 0) {
+      console.log('estas son mis habitaciones disponibles', roomsAvailables)
+      roomsAvailables.forEach(room =>
+      console.log(`habitacion: ${room.number}  Precio: ${room.priceNight}`)
+      )
+    }else {
+      console.log(`lo sentimos.No hay habitaciones para ${inputUserQuantity} persona`)
+      return
+    }
+    
+    const inputUserRoom = parseInt(prompt('Ingrese el numero de la habitacion a reservar'))
+    selectedRoom = roomsAvailables.find(room => room.number === inputUserRoom)
+    console.log(selectedRoom)
+    if (selectedRoom) {
+        bookings.push({
+        id: counterId(),
+        name: inputUserName,
+        room: `${selectedRoom.number}`,
+        dateStar: inputUserDateStar,
+        dateEnd: inputUserDateEnd
+        })
+        selectedRoom.availability = false
+        console.log('debe estar falsa', rooms)
+        console.log(`Reserva con exito!
+        Habitacion: ${selectedRoom.number}
+        Nombre: ${inputUserName}
+        Fecha de inicio ${inputUserDateStar}
+        Fecha final: ${inputUserDateEnd}`)
+        console.log('listado de reservas',bookings)
+          
+     }else {
+     console.log('ingrese un valor valido')
+     }
+}
             
-      }
+      
 // funcion para mostrar y cargar el contenido
 function loadShowData() {
   return new Promise((resolve, reject) => { // retorna una promesa para resolver despues del setTimeout
@@ -74,7 +105,7 @@ function loadShowData() {
 
 // funcion para ver disponibilidad de habitaciones
 function availableRooms(inputUser, rooms, roomTypes) {
-   return rooms.filter(room => room.availability === true && roomTypes.find(type => type.id === room.roomTypeId).capacity <= inputUser)
+   return rooms.filter(room => room.availability === true && roomTypes.find(type => type.id === room.roomTypeId).capacity === inputUser)
  }
     
  // reserva la habiatcion
